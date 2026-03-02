@@ -1,0 +1,68 @@
+Turbo Assembler	 Version 4.1	    02/28/26 00:32:07	    Page 1
+port3.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     org 100h
+      4
+      5	0100			     Start:
+      6	0100  E8 0003				 call Main
+      7	0103  E8 000E				 call Exit
+      8
+      9				     ;print regs
+     10	0106			     Main	 proc
+     11	0106  B4 09				 mov ah, 09h
+     12	0108  BA 010Dr				 mov dx, offset	HelloStr
+     13	010B  CD 21				 int 21h
+     14
+     15	010D  63 78 20 3D 20 24			 HelloStr db 'cx = ','$'
+     16
+     17	0113  C3				 ret
+     18	0114					 endp
+     19
+     20	0114			     Exit	 proc
+     21
+     22	0114  B8 4C00				 mov ax, 4c00h
+     23	0117  CD 21				 int 21h
+     24
+     25	0119  C3				 ret
+     26	011A					 endp
+     27
+     28				     end	 Start
+Turbo Assembler	 Version 4.1	    02/28/26 00:32:07	    Page 2
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/28/26"
+??FILENAME			  Text	 "port3	  "
+??TIME				  Text	 "00:32:07"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 PORT3
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+EXIT				  Near	 DGROUP:0114
+HELLOSTR			  Byte	 DGROUP:010D
+MAIN				  Near	 DGROUP:0106
+START				  Near	 DGROUP:0100
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  011A Word	  Public  CODE
+
