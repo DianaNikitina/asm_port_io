@@ -1,0 +1,61 @@
+Turbo Assembler	 Version 4.1	    02/11/26 18:27:37	    Page 1
+video.asm
+
+
+
+      1	0000			     .model tiny
+      2	0000			     .code
+      3				     org 100h
+      4	      =B800		     VIDEOSEG equ 0b800h
+      5
+      6	0100  B8 B800		     Start:  mov ax,VIDEOSEG
+      7	0103  8E C0			     mov es, ax
+      8	0105  BB 0000			     mov bx, 0
+      9	0108  BE 0082			     mov si, 82h
+     10	010B  B9 000A			     mov cx, 10
+     11
+     12	010E  8A 04		     L:	     mov al, ds: [si]
+     13	0110  B4 4E			     mov ah, 4eh
+     14	0112  83 C6 01			     add si, 1
+     15	0115  83 C3 02			     add bx, 2
+     16
+     17	0118  26: 89 07			     mov es:[bx], ax
+     18	011B  E2 F1			     LOOP L
+     19
+     20	011D  B8 4C00			     mov ax, 4c00h
+     21	0120  CD 21			     int 21h
+     22				     end     Start
+Turbo Assembler	 Version 4.1	    02/11/26 18:27:37	    Page 2
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "02/11/26"
+??FILENAME			  Text	 "video	  "
+??TIME				  Text	 "18:27:37"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 VIDEO
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+L				  Near	 DGROUP:010E
+START				  Near	 DGROUP:0100
+VIDEOSEG			  Number B800
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  0122 Word	  Public  CODE
+
