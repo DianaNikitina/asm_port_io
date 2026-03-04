@@ -1,37 +1,234 @@
-Turbo Assembler	 Version 4.1	    02/28/26 00:32:07	    Page 1
+Turbo Assembler	 Version 4.1	    03/03/26 22:30:54	    Page 1
 port3.asm
 
 
 
       1	0000			     .model tiny
-      2	0000			     .code
-      3				     org 100h
-      4
-      5	0100			     Start:
-      6	0100  E8 0003				 call Main
-      7	0103  E8 000E				 call Exit
-      8
-      9				     ;print regs
-     10	0106			     Main	 proc
-     11	0106  B4 09				 mov ah, 09h
-     12	0108  BA 010Dr				 mov dx, offset	HelloStr
-     13	010B  CD 21				 int 21h
-     14
-     15	010D  63 78 20 3D 20 24			 HelloStr db 'cx = ','$'
-     16
-     17	0113  C3				 ret
-     18	0114					 endp
-     19
-     20	0114			     Exit	 proc
-     21
-     22	0114  B8 4C00				 mov ax, 4c00h
-     23	0117  CD 21				 int 21h
-     24
-     25	0119  C3				 ret
-     26	011A					 endp
-     27
-     28				     end	 Start
-Turbo Assembler	 Version 4.1	    02/28/26 00:32:07	    Page 2
+      2	0000			     .data
+      3
+      4				     ;array
+      5	0000  61 78 20 3D 20		     reg_ax	 db 'ax	= '
+      6	      =0005			     LEN_AX	 equ $ - reg_ax
+      7	0005  62 78 20 3D 20 24		     reg_bx	 db 'bx	= ', '$'
+      8	000B  63 78 20 3D 20 24		     reg_cx	 db 'cx	= ', '$'
+      9	0011  64 78 20 3D 20 24		     reg_dx	 db 'dx	= ', '$'
+     10	0017  73 69 20 3D 20 24		     reg_si	 db 'si	= ', '$'
+     11	001D  64 69 20 3D 20 24		     reg_di	 db 'di	= ', '$'
+     12	0023  62 70 20 3D 20 24		     reg_bp	 db 'bp	= ', '$'
+     13	0029  73 70 20 3D 20 24		     reg_sp	 db 'sp	= ', '$'
+     14	002F  64 73 20 3D 20 24		     reg_ds	 db 'ds	= ', '$'
+     15	0035  65 73 20 3D 20 24		     reg_es	 db 'es	= ', '$'
+     16	003B  73 73 20 3D 20 24		     reg_ss	 db 'ss	= ', '$'
+     17	0041  63 73 20 3D 20 24		     reg_cs	 db 'cs	= ', '$'
+     18	0047  69 70 20 3D 20 24		     reg_ip	 db 'ip	= ', '$'
+     19	004D  00			     Len_Digit	 db 0
+     20
+     21	004E			     .code
+     22				     org 100h
+     23
+     24				     locals @@
+     25
+     26	      =000B		     SYMBOL		     equ 11
+     27	      =B800		     VIDEOSEG		     equ 0b800h
+     28	      =07C6		     COORDINATES_OF_CENTER   equ 7C6h
+     29	      =00DB		     COLOR_STR		     equ 0DBh
+     30	      =0082		     BEGIN_COMMAND_STR	     equ 82h
+     31	      =0003		     SYMBOL_FRAME	     equ 03h
+     32	      =008B		     COLOR_FRAME	     equ 8Bh
+     33	      =0680		     TOP_STR		     equ 680h
+     34	      =0900		     BOTTOM_STR		     equ 900h
+     35	      =00A0		     NEXT_LINE		     equ 160
+     36	      =0720		     LEFT_COLUMN	     equ 720h
+     37	      =4C00		     END_CODE		     equ 4c00h
+     38	      =0000		     NULL_LEN_STR	     equ 00h
+     39
+     40	0100			     Start:
+     41	0100  E8 0003					     call Main
+     42	0103  E8 00C5					     call Exit
+     43
+     44	0106			     Main		     proc
+     45
+     46	0106  E4 60		     Press_button:	     in	al, 60h
+     47	0108  3C 1C					     cmp al, 1Ch
+     48	010A  75 0A					     jne Exit_prog
+     49	010C  E8 0027					     call Print_str
+     50	010F  E8 0062					     call Draw_frame
+     51	0112  FF 26 FFFE				     jmp far Press_button
+**Error** port3.asm(51)	Illegal	immediate
+     52
+     53	0116  E8 00B2		     Exit_prog:		     call Exit
+     54
+     55	0119  C3					     ret
+     56	011A						     endp
+Turbo Assembler	 Version 4.1	    03/03/26 22:30:54	    Page 2
+port3.asm
+
+
+
+     57
+     58				     ;==================================
+     59				     ;print ax value
+     60				     ;di - save	top stack
+     61				     ;ax = ax /	10 , dx	= ax % 10
+     62				     ;dl = ax %	10 + '0' = '0' - '9'
+     63				     ;dx -> stack; cx =	len_number, cl = Len_Digit
+     64	011A			     Get_AX		     proc
+     65
+     66	011A  5F					     pop di
+     67
+     68	011B  B9 0000					     mov cx, 0
+     69	011E			     conv_num:
+     70	011E  BA 0000					     mov dx, 0
+     71	0121  BB 000A					     mov bx, 10
+     72	0124  F7 F3					     div bx		; ax = ax / 10,	dx = ax	% 10
+     73	0126  80 C2 30					     add dl, '0'	; ax % 10 + '0'
+     74	0129  52					     push dx		; -> stack
+     75	012A  41					     inc cx
+     76	012B  3D 0000					     cmp ax, 0
+     77	012E  75 EE					     jne conv_num
+     78
+     79	0130  88 0E 004Dr				     mov [Len_Digit], cl
+     80	0134  57					     push di
+     81
+     82	0135  C3					     ret
+     83	0136						     endp
+     84				     ;==================================
+     85				     ;save bx in global	variable - Saved_pos
+     86				     ;bx - coord
+     87	0136			     Print_str		     proc
+     88
+     89	0136  B8 B800					     mov ax, VIDEOSEG
+     90	0139  8E C0					     mov es, ax
+     91
+     92	013B  BB 07C6					     mov bx, COORDINATES_OF_CENTER
+     93
+     94	013E  BE 0000r					     mov si, offset reg_ax
+     95	0141  B4 DB					     mov ah, COLOR_STR
+     96	0143  B9 0005					     mov cx, LEN_AX
+     97
+     98	0146  8A 04		     Print_str_ax:	     mov al, [si]
+     99	0148  26: 89 07					     mov es:[bx], ax
+    100	014B  46					     inc si
+    101	014C  83 C3 02					     add bx, 2			 ; bias	(1 byte	- symbol, 2 bytes - color)
+    102	014F  E2 F5					     LOOP Print_str_ax
+    103
+    104	0151  89 1E 01C9r				     mov [Saved_pos], bx
+    105
+    106	0155  E8 FFC2					     call Get_AX
+    107
+    108	0158  8B 0E 004Dr				     mov cx, word ptr [Len_Digit]
+    109	015C  32 ED					     xor ch, ch
+    110	015E  B4 DB					     mov ah, COLOR_STR
+    111
+    112	0160  8B 1E 01C9r				     mov bx, [Saved_pos]
+    113
+Turbo Assembler	 Version 4.1	    03/03/26 22:30:54	    Page 3
+port3.asm
+
+
+
+    114	0164  5A		     Put_value_ax:	     pop dx
+    115	0165  8A C2					     mov al, dl
+    116	0167  26: 89 07					     mov es: [bx], ax
+    117	016A  83 C3 02					     add bx, 2			 ; bias	(1 byte	- symbol, 2 bytes - color)
+    118	016D  E2 F5					     LOOP Put_value_ax
+    119
+    120	016F  89 1E 01C9r				     mov [Saved_pos], bx
+    121
+    122	0173  C3					     ret
+    123	0174						     endp
+    124
+    125				     ;==================================
+    126				     ;call 2 times - Put_frame_size_horizontall, Put_symbol_horizontall
+    127				     ;call 2 times - Put_frame_size_verticall, Put_symbol_verticall
+    128	0174			     Draw_frame		     proc
+    129
+    130	0174  B0 03					     mov al, SYMBOL_FRAME
+    131	0176  B4 8B					     mov ah, COLOR_FRAME
+    132
+    133	0178  BB 0680					     mov bx, TOP_STR
+    134	017B  E8 003A					     call Put_frame_size_horizontall
+    135	017E  E8 0024					     call Put_symbol_horizontall
+    136
+    137	0181  BB 0900					     mov bx, BOTTOM_STR
+    138	0184  E8 0031					     call Put_frame_size_horizontall
+    139	0187  E8 001B					     call Put_symbol_horizontall
+    140
+    141	018A  BB 0720					     mov bx, LEFT_COLUMN
+    142	018D  E8 0033					     call Put_frame_size_verticall
+    143	0190  E8 001B					     call Put_symbol_verticall
+    144
+    145	0193  8B 1E 01C9r				     mov bx, [Saved_pos]
+    146	0197  83 C3 04					     add bx, 4			 ;bias for beautiful frame
+    147	019A  81 EB 00A0				     sub bx, NEXT_LINE
+    148	019E  E8 0022					     call Put_frame_size_verticall
+    149	01A1  E8 000A					     call Put_symbol_verticall
+    150
+    151	01A4  C3					     ret
+    152	01A5						     endp
+    153
+    154				     ;==================================
+    155				     ;draw horizontall line									    +
+    156				     ; :))))))))) ( (C)	sasha)
+    157	01A5			     Put_symbol_horizontall  proc
+    158
+    159	01A5  26: 89 07		     @@Put_symbol:	     mov es:[bx], ax
+    160	01A8  83 C3 02					     add bx, 2
+    161	01AB  E2 F8					     LOOP @@Put_symbol
+    162
+    163	01AD  C3					     ret
+    164	01AE						     endp
+    165
+    166				     ;==================================
+    167				     ;draw verticall line
+    168	01AE			     Put_symbol_verticall    proc
+    169
+    170	01AE  26: 89 07		     @@Put_symbol:	     mov es:[bx], ax
+Turbo Assembler	 Version 4.1	    03/03/26 22:30:54	    Page 4
+port3.asm
+
+
+
+    171	01B1  81 C3 00A0				     add bx, NEXT_LINE
+    172	01B5  E2 F7					     LOOP @@Put_symbol
+    173
+    174	01B7  C3					     ret
+    175	01B8						     endp
+    176
+    177				     ;==================================
+    178				     ;cl - size	of horizontall line
+    179	01B8			     Put_frame_size_horizontall	proc
+    180
+    181	01B8  80 C1 05					     add cl, LEN_AX
+    182	01BB  02 0E 004Dr				     add cl, [Len_Digit]
+    183	01BF  80 C1 06					     add cl, 6			;bias for beautiful frame
+    184
+    185	01C2  C3					     ret
+    186	01C3						     endp
+    187
+    188				     ;==================================
+    189				     ;cl - size	of verticall line
+    190	01C3			     Put_frame_size_verticall proc
+    191
+    192	01C3  80 C1 03					     add cl, 3			 ;height frame
+    193	01C6  32 ED					     xor ch, ch
+    194
+    195	01C8  C3					     ret
+    196	01C9						     endp
+    197
+    198	01C9  0000		     Saved_pos dw 0
+    199
+    200				     ;==================================
+    201	01CB			     Exit		     proc
+    202
+    203	01CB  B8 4C00					     mov ax, END_CODE
+    204	01CE  CD 21					     int 21h
+    205
+    206	01D0  C3					     ret
+    207	01D1						     endp
+    208
+    209				     end		     Start
+Turbo Assembler	 Version 4.1	    03/03/26 22:30:54	    Page 5
 Symbol Table
 
 
@@ -39,11 +236,13 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "02/28/26"
+??DATE				  Text	 "03/03/26"
 ??FILENAME			  Text	 "port3	  "
-??TIME				  Text	 "00:32:07"
+??TIME				  Text	 "22:30:54"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
+@@PUT_SYMBOL			  Near	 DGROUP:01A5
+@@PUT_SYMBOL			  Near	 DGROUP:01AE
 @CODE				  Text	 DGROUP
 @CODESIZE			  Text	 0
 @CPU				  Text	 0101H
@@ -55,14 +254,65 @@ Symbol Name			  Type	 Value
 @MODEL				  Text	 1
 @STACK				  Text	 DGROUP
 @WORDSIZE			  Text	 2
-EXIT				  Near	 DGROUP:0114
-HELLOSTR			  Byte	 DGROUP:010D
+BEGIN_COMMAND_STR		  Number 0082
+BOTTOM_STR			  Number 0900
+COLOR_FRAME			  Number 008B
+COLOR_STR			  Number 00DB
+CONV_NUM			  Near	 DGROUP:011E
+COORDINATES_OF_CENTER		  Number 07C6
+DRAW_FRAME			  Near	 DGROUP:0174
+END_CODE			  Number 4C00
+EXIT				  Near	 DGROUP:01CB
+EXIT_PROG			  Near	 DGROUP:0116
+GET_AX				  Near	 DGROUP:011A
+LEFT_COLUMN			  Number 0720
+LEN_AX				  Number 0005
+LEN_DIGIT			  Byte	 DGROUP:004D
 MAIN				  Near	 DGROUP:0106
+NEXT_LINE			  Number 00A0
+NULL_LEN_STR			  Number 0000
+PRESS_BUTTON			  Near	 DGROUP:0106
+PRINT_STR			  Near	 DGROUP:0136
+PRINT_STR_AX			  Near	 DGROUP:0146
+PUT_FRAME_SIZE_HORIZONTALL	  Near	 DGROUP:01B8
+PUT_FRAME_SIZE_VERTICALL	  Near	 DGROUP:01C3
+PUT_SYMBOL_HORIZONTALL		  Near	 DGROUP:01A5
+PUT_SYMBOL_VERTICALL		  Near	 DGROUP:01AE
+PUT_VALUE_AX			  Near	 DGROUP:0164
+REG_AX				  Byte	 DGROUP:0000
+REG_BP				  Byte	 DGROUP:0023
+REG_BX				  Byte	 DGROUP:0005
+REG_CS				  Byte	 DGROUP:0041
+REG_CX				  Byte	 DGROUP:000B
+REG_DI				  Byte	 DGROUP:001D
+REG_DS				  Byte	 DGROUP:002F
+REG_DX				  Byte	 DGROUP:0011
+REG_ES				  Byte	 DGROUP:0035
+REG_IP				  Byte	 DGROUP:0047
+REG_SI				  Byte	 DGROUP:0017
+Turbo Assembler	 Version 4.1	    03/03/26 22:30:54	    Page 6
+Symbol Table
+
+
+
+REG_SP				  Byte	 DGROUP:0029
+REG_SS				  Byte	 DGROUP:003B
+SAVED_POS			  Word	 DGROUP:01C9
 START				  Near	 DGROUP:0100
+SYMBOL				  Number 000B
+SYMBOL_FRAME			  Number 0003
+TOP_STR				  Number 0680
+VIDEOSEG			  Number B800
 
 Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
-  _DATA				  16  0000 Word	  Public  DATA
-  _TEXT				  16  011A Word	  Public  CODE
+  _DATA				  16  004E Word	  Public  DATA
+  _TEXT				  16  01D1 Word	  Public  CODE
+Turbo Assembler	 Version 4.1	    03/03/26 22:30:54	    Page 7
+Error Summary
+
+
+
+**Error** port3.asm(51)	Illegal	immediate
 

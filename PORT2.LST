@@ -1,0 +1,160 @@
+Turbo Assembler	 Version 4.1	    03/03/26 23:03:48	    Page 1
+port2.asm
+
+
+
+      1				     ;😂😂😂😂😂
+      2	0000			     .model tiny
+      3	0000			     .code
+      4				     org 100h
+      5
+      6	0100			     Start:
+      7					     ; ES = 0000 --> zero segment contains int table
+      8	0100  B8 0000			     mov ax, 0
+      9	0103  8E C0			     mov es, ax
+     10
+     11					     ; BX = 4 *	09h -->	address	of int 09h
+     12	0105  BB 0024			     mov bx, 4 * 09h
+     13
+     14					     ; save address of int 09h
+     15	0108  26: 8B 07			     mov ax, es:[bx]
+     16	010B  2E: A3 0165r		     mov cs:[OldKeyboardInterruptOffset],  ax
+     17	010F  26: 8B 47	02		     mov ax, es:[bx + 2]
+     18	0113  2E: A3 0167r		     mov cs:[OldKeyboardInterruptSegment], ax
+     19
+     20					     ; es = segment int	table
+     21	0117  B8 0000			     mov ax, 0
+     22	011A  8E C0			     mov es, ax
+     23					     ; address int 09h function	in int table (offset)
+     24	011C  BB 0024			     mov bx, 09h*4
+     25					     ; es:[bx] = 0000:0036
+     26					     ;		      |
+     27					     ;		      |
+     28					     ;		     \/
+     29					     ;[][][][][][][][0012:5288][][][][][][]
+     30					     ;[][][][][][][][offset Str_new, cs][][][][][][]
+     31
+     32					     ; cs:[offset Str_new] = address of	our function
+     33
+     34					     ; clear interrupt flag -->	prohibit interruptions
+     35	011F  FA			     cli
+     36					     ; es = 0000
+     37					     ;[][][][][][][][0012:5288][][][][][][]
+     38	0120  26: C7 07	013Br		     mov word ptr es:[bx], offset Str_new
+     39					     ;[][][][][][][][offset Str_new, 1234][][][][][][]
+     40					     ; <---------------------- can not interrupt
+     41					     ; cs = code segment
+     42	0125  26: 8C 4F	02		     mov word ptr es:[bx + 2], cs
+     43					     ;[][][][][][][][offset Str_new, cs][][][][][][]
+     44					     ; set interrupt flag --> allow interruptions
+     45	0129  FB			     sti
+     46
+     47					     ; TSR = terminate and stay	resident
+     48	012A  B8 3100			     mov ax, 3100h
+     49					     ; DX = memory to stay resident in paragraphs (= 16	bytes)
+     50	012D  BA 0170r			     mov dx, offset End_of_programm
+     51					     ; DX / 16
+     52	0130  D1 EA D1 EA D1 EA	D1+	     shr dx, 4
+     53	      EA
+     54					     ; + 1 in case not dividable by 16
+     55	0138  42			     inc dx
+     56					     ; DOS func	int
+     57	0139  CD 21			     int 21h
+Turbo Assembler	 Version 4.1	    03/03/26 23:03:48	    Page 2
+port2.asm
+
+
+
+     58
+     59	013B			     Str_new proc
+     60	013B  50			     push ax
+     61	013C  53			     push bx
+     62	013D  06			     push es
+     63
+     64	013E  50 55 8B EC C7 46	02+	     push 0b800h
+     65	      B800 5D
+     66	0148  07			     pop es
+     67	0149  BB 0370			     mov bx, (5*80 + 40) * 2
+     68	014C  B4 4E			     mov ah, 4eh
+     69	014E  E4 60			     in	al, 60h
+     70	0150  26: 89 07			     mov es:[bx], ax
+     71
+     72					     ; AL = value of 61h port (keyboard	controller port)
+     73	0153  E4 61			     in	al, 61h
+     74					     ; 80h = 1000 0000b
+     75					     ; set first AL bit	to 1 (1st bit == 1 ==> disable keyboard)
+     76	0155  0C 80			     or	al, 80h
+     77					     ; value of	61h port = AL (keyboard	controller port)
+     78	0157  E6 61			     out 61h, al
+     79					     ; AL = 0111 1111b = 7fh
+     80					     ; set first AL bit	to 0 (1st bit == 0 ==> enable keyboard)
+     81	0159  24 7F			     and al, not 80h
+     82					     ; value of	61h port = AL (keyboard	controller port)
+     83	015B  E6 61			     out 61h, al
+     84
+     85					     ; 20h - signal End	of Interrupt
+     86	015D  B0 20			     mov al, 20h ; 0010	0000
+     87					     ; out --> write al	in port	20h
+     88					     ; port 20h	= Interrupt Controller port
+     89	015F  E6 20			     out 20h, al
+     90
+     91	0161  07			     pop es
+     92	0162  5B			     pop bx
+     93	0163  58			     pop ax
+     94
+     95					     ; iret ; stack -> offset+segment
+     96
+     97	0164  EA			     db	0eah ; jmp far old09ofs:old09seg
+     98	0165  0000		     OldKeyboardInterruptOffset	  dw 0
+     99	0167  0000		     OldKeyboardInterruptSegment  dw 0
+    100
+    101	0169  90		     nop
+    102	016A  90		     nop
+    103	016B  90		     nop
+    104	016C  90		     nop
+    105	016D  90		     nop
+    106	016E  90		     nop
+    107	016F  90		     nop
+    108
+    109				     ; old09ofs	dw 0
+    110				     ; old09seg	dw 0
+    111	0170			     Str_new endp
+    112
+    113	0170			     End_of_programm:
+    114				     end Start
+Turbo Assembler	 Version 4.1	    03/03/26 23:03:48	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/03/26"
+??FILENAME			  Text	 "port2	  "
+??TIME				  Text	 "23:03:48"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 DGROUP
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 PORT2
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 1
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+END_OF_PROGRAMM			  Near	 DGROUP:0170
+OLDKEYBOARDINTERRUPTOFFSET	  Word	 DGROUP:0165
+OLDKEYBOARDINTERRUPTSEGMENT	  Word	 DGROUP:0167
+START				  Near	 DGROUP:0100
+STR_NEW				  Near	 DGROUP:013B
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+  _TEXT				  16  0170 Word	  Public  CODE
+
