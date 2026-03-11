@@ -44,6 +44,8 @@ NULL_LEN_STR            equ 00h
 SCAN_CODE_SHIFT         equ 036h
 SCAN_CODE_MINUS         equ 04ah
 CLEAN_COLOR             equ 00h
+ADDRESS_INT_09H         equ 4*09h
+TRS                     equ 3100h
 CLEAN_SYMBOL            equ ' '
 
 Start:      
@@ -53,7 +55,7 @@ Start:      
 
 
                         ; BX = 4 * 09h --> address of int 09h
-                        mov bx, 4 * 09h
+                        mov bx, ADDRESS_INT_09H
 
 
                         ; save address of int 09h
@@ -66,7 +68,7 @@ Start:      
                         mov ax, 0
                         mov es, ax
                         ; address int 09h function in int table (offset)
-                        mov bx, 09h*4
+                        mov bx, ADDRESS_INT_09H
                         ; es:[bx] = 0000:0036
                         ;                |
                         ;                |
@@ -93,7 +95,7 @@ Start:      
 
 
                         ; TSR = terminate and stay resident
-                        mov ax, 3100h
+                        mov ax, TRS
                         ; DX = memory to stay resident in paragraphs (= 16 bytes)
                         mov dx, offset End_of_programm
                         ; DX / 16
